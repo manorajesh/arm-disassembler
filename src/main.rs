@@ -1,17 +1,22 @@
-fn decode_c_addi(inst: u16) -> String {
-    println!("addi a5,a5,{}", (inst & 0b0000000001111100) >> 2);
-
+fn decode_rio(inst: u16) -> String { // Integer Register-Immediate Operation
     let mut dis_inst = String::new(); // disassembled instruction
     
     // funct
     dis_inst.push_str(get_funct(inst & 0b1110000000000000).as_str());
+    dis_inst.push_str(" ");
 
     // rd
-    dis_inst.push_str(get_reg(inst & 0b0000111110000000).as_str());
+    dis_inst.push_str(get_reg((inst & 0b0000111110000000) >> 7).as_str()); // same
     dis_inst.push_str(",");
-    dis_inst.push_str(get_reg(inst & 0b0000111110000000).as_str());
+    dis_inst.push_str(get_reg((inst & 0b0000111110000000) >> 7).as_str()); // same
 
-    // incomplete
+    // imm
+    dis_inst.push_str(",");
+    let mut imm = ((inst & 0b0000000001111100) >> 2) as i32;
+    if (inst & 0b0001000000000000) >> 12 != 0{
+        imm = -imm;
+    }
+    dis_inst.push_str((imm).to_string().as_str());
 
     dis_inst
     /*
@@ -24,20 +29,27 @@ fn decode_c_addi(inst: u16) -> String {
 fn get_reg(inst: u16) -> String {
     let mut reg = String::new();
     match inst {
-        000000 => reg.push_str("zero "),
-        000001 => reg.push_str("ra "),
-        000010 => reg.push_str("sp "),
-        000011 => reg.push_str("gp "),
-        000100 => reg.push_str("tp "),
-        000101 => reg.push_str("t0 "),
-        001000 => reg.push_str("s0 "),
-        001010 => reg.push_str("a0 "),
-        001011 => reg.push_str("a1 "),
-        001100 => reg.push_str("a2 "),
-        001101 => reg.push_str("a3 "),
-        001110 => reg.push_str("a4 "),
-        001111 => reg.push_str("a5 "),
-        _ => panic!("Invalid register"),
+        0b00000 => reg.push_str("zero"),
+        0b00001 => reg.push_str("ra"),
+        0b00010 => reg.push_str("sp"),
+        0b00011 => reg.push_str("gp"),
+        0b00100 => reg.push_str("tp"),
+        0b00101 => reg.push_str("t0"),
+        0b01000 => reg.push_str("s0"),
+        0b01010 => reg.push_str("a0"),
+        0b01011 => reg.push_str("a1"),
+        0b01100 => reg.push_str("a2"),
+        0b01101 => reg.push_str("a3"),
+        0b01110 => reg.push_str("a4"),
+        0b01111 => reg.push_str("a5"),
+        _ => {
+            if inst > 0b100000 { // 32
+                reg.push_str("x");
+                reg.push_str((0b100000 - inst).to_string().as_str());
+            } else {
+                panic!("Invalid register")
+            }
+        },
     }
     reg
 }
@@ -45,15 +57,17 @@ fn get_reg(inst: u16) -> String {
 fn get_funct(inst: u16) -> String {
     let mut funct = String::new();
     match inst {
-        000 => funct.push_str("addi "),
+        0b000 => funct.push_str("addi"),
         _ => panic!("Invalid funct"),
     }
     funct
 }
 
 fn main() {
-    decode_c_addi(0x078d); //addi a5,a5,01
-    decode_c_addi(0x0789); //addi a5,a5,02
+    println!("{}", decode_rio(0x078d)); //addi a5,a5,01
+    println!("{}", decode_rio(0x0789)); //addi a5,a5,02
+    println!("{}", decode_rio(0x057d)); //addi a0,a0,31
+    println!("{}", decode_rio(0x1141)); //addi sp,sp,-16
 }
 
 /*
