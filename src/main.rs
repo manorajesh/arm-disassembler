@@ -2,29 +2,88 @@ fn rvc_from(inst: u16) -> String {
     let opcode = inst & 0b11;
 
     let line = match opcode {
+        0b00 => {
+            let mut c0 = C0 {
+                funct: 0,
+                rs1: 0,
+                rd: 0,
+                imm: 0,
+                neg: false,
+            };
+            c0.decode(inst);
+            c0.format()
+        }
         0b01 => {
-            let mut c_rio = C1 {
+            let mut c1 = C1 {
                 funct: 0,
                 rd: 0,
                 imm: 0,
                 neg: 0,
             };
-            c_rio.decode(inst);
-            c_rio.format()
+            c1.decode(inst);
+            c1.format()
         }
         0b10 => {
-            let mut c_store = C2 {
+            let mut c2 = C2 {
                 funct: 0,
                 rs2: 0,
                 rs1: 0,
                 flag: 0,
             };
-            c_store.decode(inst);
-            c_store.format()
+            c2.decode(inst);
+            c2.format()
         }
-        _ => return String::new(),
+        _ => String::new(),
     };
     line
+}
+
+struct C0 {
+    funct: u16,
+    rd: u16,
+    rs1: u16,
+    imm: u16,
+    neg: bool,
+}
+
+impl C0 {
+    fn decode(&mut self, inst: u16) {
+        self.funct = (inst & 0b1110000000000000) >> 13;
+        self.rd = (inst & 0b0000000000011100) >> 2;
+        self.rs1 = (inst & 0b0000001110000000) >> 7;
+        self.imm = {
+            let part1 = (inst & 0b0001110000000000) >> 8; 
+            let part2 = (inst & 0b0000000001100000) >> 4;
+            part1 + part2
+        };
+        self.neg = {
+            if self.imm & 0b10000 != 0 {
+                true // msb is 1 thus negative
+            } else {
+                false
+            }
+        };
+    }
+
+    fn format(&self) -> String {
+        let funct = match self.funct {
+            0b010 => "lw",
+            0b110 => "sw",
+            _ => return String::new(),
+        };
+
+        let rd = get_creg(self.rd);
+        let rs1 = get_creg(self.rs1);
+        let imm = {
+            if self.neg {
+                -(!self.imm as i32 + 1)
+            } else {
+                self.imm as i32
+            }
+        };
+
+        return format!("{} {},{}({})", funct, rd, imm, rs1);
+    }
 }
 
 struct C1 {
@@ -115,6 +174,18 @@ impl C2 {
     }
 }
 
+fn get_creg(inst: u16) -> String { // compressed format for registers
+    if inst < 0b1000 {
+        let abi = [
+        "s0", "s1", "a0", "a1", "a2", "a3", "a4", "a5"
+        ];
+        abi[inst as usize].to_string()
+    } else {
+        return String::new();
+    }
+    
+}
+
 fn get_reg(inst: u16) -> String {
     if inst < 0b10000 {
         let abi = [
@@ -129,11 +200,11 @@ fn get_reg(inst: u16) -> String {
 }
 
 fn main() {
-    let inst = 0x853e;
+    let inst = 0xcc62;
     let line = rvc_from(inst);
 
     if line == String::new() {
-        println!("{}", inst);
+        println!("db {:b}", inst);
     } else {
         println!("{}", line);
     }
