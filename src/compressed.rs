@@ -52,7 +52,7 @@ impl C0 {
         self.rd = (inst & 0b0000000000011100) >> 2;
         self.rs1 = (inst & 0b0000001110000000) >> 7;
         self.imm = {
-            let part1 = (inst & 0b0001110000000000) >> 8; 
+            let part1 = (inst & 0b0001110000000000) >> 8;
             let part2 = (inst & 0b0000000001100000) >> 4;
             part1 + part2
         };
@@ -82,7 +82,7 @@ impl C0 {
             }
         };
 
-        if Some(&rd) == None || Some(&rs1) == None || Some(&imm) == None {
+        if rd == String::new() || rd == String::new() {
             return String::new();
         } else {
             return format!("{} {},{}({})", funct, rd, imm, rs1);
@@ -161,7 +161,7 @@ impl C2 {
 
         let rs1 = get_reg(self.rs1);
         let rs2 = get_reg(self.rs2);
-        
+
         match funct {
             "jr" => {
                 if self.flag == 0 && self.rs2 == 0 {
@@ -170,9 +170,9 @@ impl C2 {
                     return format!("mv {},{}", rs1, rs2);
                 } else if self.flag == 1 && self.rs1 == 0 && self.rs2 == 0 {
                     return "ebreak".to_string();
-                } else if  self.flag == 1 && self.rs2 == 0 {
+                } else if self.flag == 1 && self.rs2 == 0 {
                     return format!("jalr {}", rs1);
-                } else if self.flag == 1 && self.rs1 != 0 && self.rs2 != 0{
+                } else if self.flag == 1 && self.rs1 != 0 && self.rs2 != 0 {
                     return format!("add {},{},{}", rs1, rs1, rs2);
                 } else {
                     return String::new();
@@ -191,16 +191,14 @@ impl C2 {
     }
 }
 
-fn get_creg(inst: u16) -> String { // compressed format for registers
+fn get_creg(inst: u16) -> String {
+    // compressed format for registers
     if inst < 0b1000 {
-        let abi = [
-        "s0", "s1", "a0", "a1", "a2", "a3", "a4", "a5"
-        ];
+        let abi = ["s0", "s1", "a0", "a1", "a2", "a3", "a4", "a5"];
         abi[inst as usize].to_string()
     } else {
         return String::new();
     }
-    
 }
 
 fn get_reg(inst: u16) -> String {
