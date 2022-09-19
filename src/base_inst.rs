@@ -44,10 +44,10 @@ struct I {
 
 impl I {
     fn decode(&mut self, inst: u32) {
-        self.rd = (inst & 0b00000000000000000000011111000000) >> 6;
-        self.funct3 = (inst & 0b00000000000000000011100000000000) >> 11;
-        self.rs1 = (inst & 0b00000000000001111100000000000000) >> 14;
-        self.imm = (inst & 0b11111111111110000000000000000000) >> 20;
+        self.rd = (inst & 0b00000000000000000000111110000000) >> 7;
+        self.funct3 = (inst & 0b00000000000000000111000000000000) >> 12;
+        self.rs1 = (inst & 0b00000000000011111000000000000000) >> 15;
+        self.imm = (inst & 0b11111111111100000000000000000000) >> 20;
     }
 
     fn format(&self) -> String {
@@ -63,8 +63,8 @@ impl I {
         let rd = get_reg(self.rd);
         let rs1 = get_reg(self.rs1);
         let imm = {
-            if self.imm & 0b1000000000000000 != 0 {
-                -(!self.imm as i32 + 1)
+            if self.imm & 0b100000000000 != 0 {
+                -((!self.imm & 0b111111111111) as i32 + 1)
             } else {
                 self.imm as i32
             }
