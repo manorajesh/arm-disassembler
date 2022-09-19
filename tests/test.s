@@ -1,1 +1,1 @@
-addi sp,sp, -10
+lw s0,8(sp)
