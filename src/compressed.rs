@@ -11,7 +11,7 @@ pub fn rvc_from(inst: u16) -> String {
                 neg: false,
             };
             c0.decode(inst);
-            c0.format()
+            c0.format(inst)
         }
         0b01 => {
             let mut c1 = C1 {
@@ -65,25 +65,32 @@ impl C0 {
         };
     }
 
-    fn format(&self) -> String {
+    fn format(&self, inst: u16) -> String {
         let funct = match self.funct {
             0b010 => "lw",
             0b110 => "sw",
+            0b000 => "addi",
             _ => return String::new(),
         };
 
         let rd = get_creg(self.rd);
         let rs1 = get_creg(self.rs1);
         let imm = {
-            if self.neg {
-                -(!self.imm as i32 + 1)
+            if funct == "addi" {
+                ((inst & 0b0001111111100000) >> 5) as i32
             } else {
-                self.imm as i32
+                if self.neg {
+                    -(!self.imm as i32 + 1)
+                } else {
+                    self.imm as i32
+                }
             }
         };
 
         if rd == String::new() || rd == String::new() {
             return String::new();
+        } else if funct == "addi" {
+            return format!("{} {},{},{}", funct, rd, "sp", imm);
         } else {
             return format!("{} {},{}({})", funct, rd, imm, rs1);
         }
@@ -179,12 +186,12 @@ impl C2 {
                 }
             }
             "lwsp" => {
-                let imm = self.rs2 as i32;
+                let imm = self.rs2 as i32 + (self.flag * 0b10000) as i32;
                 return format!("{} {},{}({})", "lw", rs1, imm, "sp");
             }
             "swsp" => {
-                let imm = self.rs2 as i32;
-                return format!("{} {},{}({})", "sw", rs1, imm, "sp");
+                let imm = self.rs1 as i32 + (self.flag * 0b10000) as i32;
+                return format!("{} {},{}({})", "sw", rs2, imm, "sp");
             }
             _ => return String::new(),
         };
@@ -202,7 +209,7 @@ fn get_creg(inst: u16) -> String {
 }
 
 fn get_reg(inst: u16) -> String {
-    if inst < 0b10000 {
+    if inst < 0b100000 {
         let abi = [
             "zero", "ra", "sp", "gp", "tp", "t0", "t1", "t2", "s0", "s1", "a0", "a1", "a2", "a3",
             "a4", "a5", "a6", "a7", "s2", "s3", "s4", "s5", "s6", "s7", "s8", "s9", "s10", "s11",
