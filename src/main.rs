@@ -1,11 +1,31 @@
-use std::io::stdin;
+use std::io::{stdin, Read};
+use std::str;
 mod base_inst;
 mod compressed;
 
 fn main() {
-    let mut buffer = String::new();
     let mut index;
-    stdin().read_line(&mut buffer).expect("Failed to read line");
+
+    let mut buffer = {
+        let mut bytes = Vec::new();
+
+        for byte in stdin().bytes() {
+            bytes.push(byte.unwrap());
+        }
+
+        let buffer = match str::from_utf8(&bytes) {
+            Ok(v) => v.to_string(),
+            Err(_) => {
+                let mut buffer = String::new();
+                for byte in bytes {
+                    buffer.push(format!("{:x}", byte).parse().unwrap());
+                }
+                buffer
+            }
+        };
+        buffer
+    };
+
     buffer = buffer.trim().chars().rev().collect();
 
     loop {

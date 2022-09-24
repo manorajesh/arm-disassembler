@@ -1,6 +1,6 @@
 pub fn base_inst_from(inst: u32) -> String {
     let opcode = inst & 0b1111111;
-    
+
     let line = match opcode {
         0b0000011 => {
             let mut i = I {
@@ -69,7 +69,7 @@ impl I {
                 self.imm as i32
             }
         };
-        
+
         if rd == String::new() || rd == String::new() {
             return String::new();
         } else {
